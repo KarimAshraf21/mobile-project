@@ -1,9 +1,14 @@
 // ignore_for_file: file_names, unused_import
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '/screens/profile_page.dart';
 import '/screens/ride_page.dart';
 import '/screens/trips_page.dart';
 import 'package:flutter/material.dart';
+
+import '/user.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -13,15 +18,42 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  User? _user;
+  Map<String, dynamic>? _userData;
+  @override
+  void initState() {
+    _getUserInfo();
+    super.initState();
+  }
+
+  Future<void> _getUserInfo() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DocumentSnapshot<Map<String, dynamic>> userData = await FirebaseFirestore
+          .instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      setState(() {
+        _user = user;
+        _userData = userData.data();
+        firstname = _userData!['firstName'];
+        phone = _userData!['phone'];
+        id = _userData!['id'];
+        email = _userData!['email'];
+      });
+    }
+  }
+
   int _currentIndex = 0;
 
   // List of pages corresponding to each tab
   final List<Widget> _pages = [
     const RidePage(),
     const TripsPage(),
-    const ProfilePage(
-      userName: "Karim Shalaby",
-      userImageAsset: "assets/image.JPG",
+    ProfilePage(
+      userName: firstname,
     ),
   ];
 
@@ -67,17 +99,17 @@ class _HomePageState extends State<HomePage> {
         children: [
           SizedBox(width: 50, child: Image.asset('assets/logo.png')),
           const SizedBox(width: 8), // Add some spacing between logo and texts
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Hey, Karim!',
-                style: TextStyle(
+                'Hey, $firstname!',
+                style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
               ),
-              Text(
+              const Text(
                 'Where are you going?',
                 style: TextStyle(fontSize: 12, color: Colors.white),
               ),

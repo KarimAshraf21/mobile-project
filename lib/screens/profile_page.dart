@@ -3,16 +3,20 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   final String userName;
-  final String userImageAsset; // Asset path for the user's image
+  // Asset path for the user's image
 
   const ProfilePage({
     Key? key,
     required this.userName,
-    required this.userImageAsset,
   }) : super(key: key);
 
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,13 +28,8 @@ class ProfilePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircleAvatar(
-              radius: 80,
-              backgroundImage: AssetImage(userImageAsset),
-            ),
-            const SizedBox(height: 20),
             Text(
-              'Hello, $userName',
+              'Hello, ${widget.userName}',
               style: const TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
