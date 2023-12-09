@@ -18,7 +18,8 @@ class _PaymentPageState extends State<PaymentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Payment Details'),
+        title: const Text('Payment Details',
+            style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
       ),
       body: Center(
@@ -55,7 +56,8 @@ class _PaymentPageState extends State<PaymentPage> {
                   );
                 }
               },
-              child: const Text('Proceed to Pay'),
+              child: const Text('Proceed to Pay',
+                  style: TextStyle(color: Colors.white)),
             ),
           ],
         ),

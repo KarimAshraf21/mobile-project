@@ -49,7 +49,12 @@ class _MyAppState extends State<MyApp> {
               userName: 'Karim',
             ),
       },
-      home: const SignupPage(),
+      theme: ThemeData(
+        appBarTheme: const AppBarTheme(
+          iconTheme: IconThemeData(color: Colors.white),
+        ),
+      ),
+      home: const HomePage(),
     );
   }
 }

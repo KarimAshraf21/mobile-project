@@ -105,6 +105,7 @@ class _UpcomingTripsListState extends State<UpcomingTripsList> {
 
   Widget _buildTripCard(Ride ride) {
     return Card(
+      color: Colors.white,
       elevation: 3,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
@@ -176,6 +177,7 @@ class _PreviousTripsListState extends State<PreviousTripsList> {
 
   Widget _buildTripCard(Ride ride) {
     return Card(
+      color: Colors.white,
       elevation: 3,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(

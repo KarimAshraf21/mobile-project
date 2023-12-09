@@ -72,11 +72,14 @@ class _HomePageState extends State<HomePage> {
             children: [
               Text(
                 'Hey, Karim!',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
               ),
               Text(
                 'Where are you going?',
-                style: TextStyle(fontSize: 12),
+                style: TextStyle(fontSize: 12, color: Colors.white),
               ),
             ],
           ),

@@ -16,7 +16,8 @@ class _BookingPageState extends State<BookingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Booking Details'),
+        title: const Text('Booking Details',
+            style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
       ),
       body: Column(
@@ -57,7 +58,8 @@ class _BookingPageState extends State<BookingPage> {
                     builder: (context) => PaymentPage(ride: widget.ride)),
               );
             },
-            child: const Text('Book Now'),
+            child:
+                const Text('Book Now', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),

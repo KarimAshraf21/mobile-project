@@ -155,6 +155,7 @@ class _RidePageState extends State<RidePage> {
             ),
             ...ridesGroupedByDate[date]!.map((ride) {
               return Card(
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12.0),
                 ),
