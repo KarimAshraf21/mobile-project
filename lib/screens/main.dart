@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 
 import 'package:project/firebase_options.dart';
-import '/screens/account_details.dart';
+
 import '/screens/home_page.dart';
 import '/screens/login_page.dart';
 import '/screens/signup_page.dart';
@@ -45,9 +45,6 @@ class _MyAppState extends State<MyApp> {
         '/login': (context) => const LoginPage(),
         '/home': (context) => const HomePage(),
         '/trips': (context) => const TripsPage(),
-        '/account_management': (context) => const AccountManagementPage(
-              userName: 'Karim',
-            ),
       },
       theme: ThemeData(
         appBarTheme: const AppBarTheme(

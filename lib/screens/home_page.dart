@@ -1,4 +1,4 @@
-// ignore_for_file: file_names, unused_import
+// ignore_for_file: file_names, unused_import, unused_field
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,7 +8,10 @@ import '/screens/ride_page.dart';
 import '/screens/trips_page.dart';
 import 'package:flutter/material.dart';
 
-import '/user.dart';
+String firstname = '';
+String phone = '';
+String id = '';
+String email = '';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -52,9 +55,7 @@ class _HomePageState extends State<HomePage> {
   final List<Widget> _pages = [
     const RidePage(),
     const TripsPage(),
-    ProfilePage(
-      userName: firstname,
-    ),
+    const ProfilePage(),
   ];
 
   @override
