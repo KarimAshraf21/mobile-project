@@ -206,8 +206,38 @@ class _SignupPageState extends State<SignupPage> {
                 'email': _emailController.text,
                 'phone': _numberController.text,
                 'id': _emailController.text.split('@').first,
+                // Do not add 'rideHistory' here
               });
+
+// Add a rideHistory document inside the user's subcollection
+              String rideId = 'your_ride_id'; // Replace with the actual ride ID
+              String driverId =
+                  'your_driver_id'; // Replace with the actual driver ID
+
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(userCredential.user!.uid)
+                  .collection('rideHistory')
+                  .doc(
+                      rideId) // Use rideId as the document ID in the subcollection
+                  .set({
+                'driverId': driverId,
+                // Other fields you may want to include, initially empty or null
+                'status': null,
+                'someOtherField': null,
+                // ...
+              });
+
               print("=====================================");
+              await FirebaseFirestore.instance
+                  .collection('drivers')
+                  .doc(userCredential.user!.uid)
+                  .set({
+                'firstName': _nameController.text,
+                'email': _emailController.text,
+                'phone': _numberController.text,
+                'id': _emailController.text.split('@').first,
+              });
 
               Navigator.pushReplacementNamed(context, '/home');
             } catch (e) {
