@@ -5,14 +5,14 @@ import 'package:flutter/material.dart';
 
 import 'package:intl/intl.dart';
 
-class TripsPage extends StatefulWidget {
-  const TripsPage({Key? key});
+class HistoryPage extends StatefulWidget {
+  const HistoryPage({Key? key});
 
   @override
-  State<TripsPage> createState() => _TripsPageState();
+  State<HistoryPage> createState() => _HistoryPageState();
 }
 
-class _TripsPageState extends State<TripsPage> {
+class _HistoryPageState extends State<HistoryPage> {
   bool showUpcomingTrips = true;
 
   @override

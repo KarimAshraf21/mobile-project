@@ -5,7 +5,7 @@ import 'package:project/firebase_options.dart';
 import '/screens/home_page.dart';
 import '/screens/login_page.dart';
 import '/screens/signup_page.dart';
-import '/screens/trips_page.dart';
+import 'history_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -44,7 +44,7 @@ class _MyAppState extends State<MyApp> {
         '/signup': (context) => const SignupPage(),
         '/login': (context) => const LoginPage(),
         '/home': (context) => const HomePage(),
-        '/trips': (context) => const TripsPage(),
+        '/trips': (context) => const HistoryPage(),
       },
       theme: ThemeData(
         appBarTheme: const AppBarTheme(

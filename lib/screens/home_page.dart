@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '/screens/profile_page.dart';
 import '/screens/ride_page.dart';
-import '/screens/trips_page.dart';
+import 'history_page.dart';
 import 'package:flutter/material.dart';
 
 String firstname = '';
@@ -54,7 +54,7 @@ class _HomePageState extends State<HomePage> {
   // List of pages corresponding to each tab
   final List<Widget> _pages = [
     const RidePage(),
-    const TripsPage(),
+    const HistoryPage(),
     const ProfilePage(),
   ];
 
