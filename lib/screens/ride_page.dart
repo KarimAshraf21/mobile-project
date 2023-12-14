@@ -119,14 +119,13 @@ class _RidePageState extends State<RidePage> {
 
     List<Ride> rides = snapshot.docs
         .map((DocumentSnapshot<Map<String, dynamic>> doc) {
-          final data = doc.data()!;
-          return Ride.fromFirestore(data);
+          final data = doc.data() as Map<String, dynamic>; // Explicit casting
+          return Ride.fromFirestore(doc.id, data);
         })
         .where((ride) =>
             ride.startLocation == selectedStartLocation &&
             ride.endLocation == selectedDestination &&
-            ride.availableSeats >
-                0) // Exclude rides with available seats equal to 0
+            ride.availableSeats > 0)
         .toList();
 
     // Sort rides by date in ascending order

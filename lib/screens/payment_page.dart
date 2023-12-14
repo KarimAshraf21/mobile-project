@@ -1,5 +1,8 @@
+// ignore_for_file: use_build_context_synchronously, avoid_print
+
 import '/screens/ride.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PaymentPage extends StatefulWidget {
   final Ride ride;
@@ -7,7 +10,6 @@ class PaymentPage extends StatefulWidget {
   const PaymentPage({Key? key, required this.ride}) : super(key: key);
 
   @override
-  // ignore: library_private_types_in_public_api
   _PaymentPageState createState() => _PaymentPageState();
 }
 
@@ -118,15 +120,52 @@ class _PaymentPageState extends State<PaymentPage> {
     );
   }
 
-  void _bookRide() {
-    // Implement the logic to decrement available seats and book the ride
-    setState(() {
-      widget.ride.availableSeats--;
-    });
-    Navigator.pushNamedAndRemoveUntil(
-      context,
-      '/home',
-      (route) => false, // Remove all existing routes from the stack
-    );
+  void _bookRide() async {
+    try {
+      // Access the Firestore instance
+      FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+      // Create a reference to the ride document
+      DocumentReference rideReference =
+          firestore.collection('rides').doc(widget.ride.rideId);
+
+      // Use a transaction to update the available seats
+      await firestore.runTransaction((transaction) async {
+        // Get the current data of the ride
+        DocumentSnapshot rideSnapshot = await transaction.get(rideReference);
+
+        // Extract the current available seats
+        int availableSeats = rideSnapshot['availableSeats'];
+
+        // Check if there are available seats
+        if (availableSeats > 0) {
+          // Decrement the available seats
+          transaction
+              .update(rideReference, {'availableSeats': availableSeats - 1});
+
+          // Navigate to the appropriate screen
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            '/home',
+            (route) => false,
+          );
+        } else {
+          // Handle the case where there are no available seats
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No available seats for this ride.'),
+            ),
+          );
+        }
+      });
+    } catch (e) {
+      // Handle Firestore or network errors
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to book the ride. Please try again.'),
+        ),
+      );
+    }
   }
 }

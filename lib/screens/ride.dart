@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Ride {
+  final String rideId; // New field to store the ride ID
   final String name;
   final String startLocation;
   final String endLocation;
@@ -8,9 +9,10 @@ class Ride {
   final String time;
   late int availableSeats;
   final String price;
-  final String driverId; // Assuming driverId is a field in your Ride model
+  final String driverId;
 
   Ride({
+    required this.rideId,
     required this.name,
     required this.startLocation,
     required this.endLocation,
@@ -21,8 +23,9 @@ class Ride {
     required this.driverId,
   });
 
-  factory Ride.fromFirestore(Map<String, dynamic> data) {
+  factory Ride.fromFirestore(String rideId, Map<String, dynamic> data) {
     return Ride(
+      rideId: rideId,
       name: data['name'] ?? '',
       startLocation: data['start'] ?? '',
       endLocation: data['end'] ?? '',
@@ -30,8 +33,7 @@ class Ride {
       time: data['time'] ?? '',
       availableSeats: data['availableSeats'] ?? 0,
       price: data['price'] ?? '',
-      driverId:
-          data['driverId'] ?? '', // Assuming 'driverId' is the correct field
+      driverId: data['driverId'] ?? '',
     );
   }
 }
