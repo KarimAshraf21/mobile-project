@@ -124,7 +124,9 @@ class _RidePageState extends State<RidePage> {
         })
         .where((ride) =>
             ride.startLocation == selectedStartLocation &&
-            ride.endLocation == selectedDestination)
+            ride.endLocation == selectedDestination &&
+            ride.availableSeats >
+                0) // Exclude rides with available seats equal to 0
         .toList();
 
     // Sort rides by date in ascending order
