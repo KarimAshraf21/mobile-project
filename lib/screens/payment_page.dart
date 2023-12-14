@@ -1,4 +1,6 @@
-// ignore_for_file: use_build_context_synchronously, avoid_print
+// ignore_for_file: use_build_context_synchronously, avoid_print, library_private_types_in_public_api
+
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '/screens/ride.dart';
 import 'package:flutter/material.dart';
@@ -129,7 +131,10 @@ class _PaymentPageState extends State<PaymentPage> {
       DocumentReference rideReference =
           firestore.collection('rides').doc(widget.ride.rideId);
 
-      // Use a transaction to update the available seats
+      // Create a reference to the booking document
+      CollectionReference bookingsReference = firestore.collection('bookings');
+
+      // Use a transaction to update the available seats and add a booking entry
       await firestore.runTransaction((transaction) async {
         // Get the current data of the ride
         DocumentSnapshot rideSnapshot = await transaction.get(rideReference);
@@ -143,12 +148,32 @@ class _PaymentPageState extends State<PaymentPage> {
           transaction
               .update(rideReference, {'availableSeats': availableSeats - 1});
 
-          // Navigate to the appropriate screen
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            '/home',
-            (route) => false,
-          );
+          // Add a booking entry to the bookings collection
+          String? userId = await getCurrentUserId();
+          if (userId != null) {
+            DocumentReference bookingReference = await bookingsReference.add({
+              'rideId': widget.ride.rideId,
+              'userId': userId,
+              'status': 'paid',
+            });
+
+            // Log the ID of the created booking entry (optional)
+            print('Booking ID: ${bookingReference.id}');
+
+            // Navigate to the appropriate screen
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/home',
+              (route) => false,
+            );
+          } else {
+            // Handle the case where user ID is null
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('User ID is null.'),
+              ),
+            );
+          }
         } else {
           // Handle the case where there are no available seats
           ScaffoldMessenger.of(context).showSnackBar(
@@ -166,6 +191,23 @@ class _PaymentPageState extends State<PaymentPage> {
           content: Text('Failed to book the ride. Please try again.'),
         ),
       );
+    }
+  }
+
+  Future<String?> getCurrentUserId() async {
+    try {
+      // Get the current authenticated user
+      var user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        return user.uid;
+      } else {
+        return null;
+      }
+    } catch (e) {
+      // Handle error, e.g., logging or throwing a custom exception
+      print('Error getting current user ID: $e');
+      return null;
     }
   }
 }
