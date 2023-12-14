@@ -1,8 +1,8 @@
-// ignore_for_file: file_names
-
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:project/screens/booking_page.dart';
 import 'ride.dart';
-import 'booking_page.dart';
 
 class RidePage extends StatefulWidget {
   const RidePage({Key? key}) : super(key: key);
@@ -12,22 +12,18 @@ class RidePage extends StatefulWidget {
 }
 
 class _RidePageState extends State<RidePage> {
-  List<String> locations = ['Campus', 'Nasr City 1', 'Tagamoa', 'Maadi'];
+  final List<String> locations = ['Campus', 'Nasr City 1', 'Tagamoa', 'Maadi'];
   String selectedStartLocation = "Campus";
   String selectedDestination = 'Nasr City 1';
-  List<Ride> rides = generateDummyRidesForRide();
 
   @override
   Widget build(BuildContext context) {
-    List<Widget> rideWidgets = _buildRideList();
-
     return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
+      body: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Column(
+          children: [
+            Row(
               children: [
                 Expanded(
                   child: _buildDropdown(
@@ -56,29 +52,41 @@ class _RidePageState extends State<RidePage> {
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: Scrollbar(
-              child: GlowingOverscrollIndicator(
-                axisDirection: AxisDirection.down,
-                color: Colors.transparent,
-                child: rideWidgets.isNotEmpty
-                    ? ListView(
-                        children: rideWidgets,
-                      )
-                    : const Center(
-                        child: Text(
-                          'No trips found for the selected criteria.',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream:
+                    FirebaseFirestore.instance.collection('rides').snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  }
+
+                  if (snapshot.hasError) {
+                    return const Text('Error fetching rides');
+                  }
+
+                  List<Widget> rideWidgets = _buildRideList(snapshot.data);
+
+                  return ListView(
+                    children: rideWidgets.isNotEmpty
+                        ? rideWidgets
+                        : [
+                            const Center(
+                              child: Text(
+                                'No trips found for the selected criteria.',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                  );
+                },
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -104,152 +112,139 @@ class _RidePageState extends State<RidePage> {
     );
   }
 
-  List<Widget> _buildRideList() {
-    // Group rides by date
-    Map<DateTime, List<Ride>> ridesGroupedByDate = {};
-    DateTime today = DateTime.now();
+  List<Widget> _buildRideList(QuerySnapshot<Map<String, dynamic>>? snapshot) {
+    if (snapshot == null || snapshot.docs.isEmpty) {
+      return [];
+    }
+
+    List<Ride> rides = snapshot.docs
+        .map((DocumentSnapshot<Map<String, dynamic>> doc) {
+          final data = doc.data()!;
+          return Ride.fromFirestore(data);
+        })
+        .where((ride) =>
+            ride.startLocation == selectedStartLocation &&
+            ride.endLocation == selectedDestination)
+        .toList();
+
+    // Sort rides by date in ascending order
+    rides.sort((a, b) => a.date.compareTo(b.date));
+
+    Map<DateTime, List<Ride>> groupedRides = {};
 
     for (Ride ride in rides) {
-      DateTime date = ride.date;
-
-      // Filter out rides before today
-      if (date.isBefore(today)) {
-        continue;
-      }
-
-      // Filter rides based on start and end destinations
-      if (ride.startLocation != selectedStartLocation ||
-          ride.endLocation != selectedDestination) {
-        continue;
-      }
-
-      // Filter out rides with no available seats
-      if (ride.availableSeats == 0) {
-        continue;
-      }
-
-      DateTime formattedDate = DateTime(date.year, date.month, date.day);
-      ridesGroupedByDate.putIfAbsent(formattedDate, () => []);
-      ridesGroupedByDate[formattedDate]!.add(ride);
+      DateTime formattedDate =
+          DateTime(ride.date.year, ride.date.month, ride.date.day);
+      groupedRides.putIfAbsent(formattedDate, () => []);
+      groupedRides[formattedDate]!.add(ride);
     }
 
-    // Sort dates in descending order (latest date first)
-    List<DateTime> sortedDates = ridesGroupedByDate.keys.toList()
-      ..sort((a, b) => a.compareTo(b));
-
-    List<Widget> rideWidgets = [];
-    for (DateTime date in sortedDates) {
-      rideWidgets.add(
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                "${date.day}/${date.month}/${date.year}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
+    return groupedRides.keys.map((DateTime date) {
+      List<Ride> ridesOnDate = groupedRides[date]!;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              DateFormat('EEEE, dd/MM').format(date),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
               ),
             ),
-            ...ridesGroupedByDate[date]!.map((ride) {
-              return Card(
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12.0),
-                ),
-                margin: const EdgeInsets.all(8.0),
-                elevation: 4.0,
-                child: ListTile(
-                  title: Row(
-                    children: [
-                      const Icon(Icons.directions_car, color: Colors.blue),
-                      const SizedBox(width: 8),
-                      Text(
-                        ride.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 8),
-                      _buildRideInfoRow(
-                        Icons.location_on,
-                        'From',
-                        ride.startLocation,
-                        Colors.blue,
-                      ),
-                      _buildRideInfoRow(
-                        Icons.location_on,
-                        'To',
-                        ride.endLocation,
-                        Colors.red,
-                      ),
-                      _buildRideInfoRow(
-                        Icons.access_time,
-                        'Time',
-                        ride.startTime,
-                        Colors.orange,
-                      ),
-                      _buildRideInfoRow(
-                        Icons.event_seat,
-                        'Available seats',
-                        ride.availableSeats.toString(),
-                        Colors.black,
-                      ),
-                      _buildRideInfoRow(
-                        Icons.attach_money,
-                        'Price',
-                        ride.price,
-                        Colors.green,
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => BookingPage(ride: ride),
-                      ),
-                    );
-                  },
-                ),
-              );
-            }).toList(),
-          ],
-        ),
-      );
-    }
+          ),
+          ...ridesOnDate.map((ride) {
+            return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+              future: FirebaseFirestore.instance
+                  .collection('drivers')
+                  .doc(ride.driverId)
+                  .get(),
+              builder: (context, driverSnapshot) {
+                if (driverSnapshot.connectionState == ConnectionState.waiting ||
+                    !driverSnapshot.hasData) {
+                  // You can return a loading indicator if needed
+                  return const CircularProgressIndicator();
+                }
 
-    return rideWidgets;
+                final driverData = driverSnapshot.data!.data()!;
+                final driverName = driverData['firstName'] ?? 'Unknown Driver';
+                final driverId = driverData['id'] ?? '';
+
+                return Card(
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  elevation: 4.0,
+                  margin: const EdgeInsets.all(8.0),
+                  child: ListTile(
+                    title: Text(
+                      ride.name,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildRideInfoRow(Icons.person, 'Driver Name',
+                            driverName, Colors.black),
+                        _buildRideInfoRow(
+                            Icons.person, 'Driver Id', driverId, Colors.black),
+                        _buildRideInfoRow(Icons.location_on, 'From',
+                            ride.startLocation, Colors.blue),
+                        _buildRideInfoRow(Icons.location_on, 'To',
+                            ride.endLocation, Colors.red),
+                        _buildRideInfoRow(Icons.access_time, 'Time', ride.time,
+                            Colors.orange),
+                        _buildRideInfoRow(Icons.event_seat, 'Available seats',
+                            ride.availableSeats.toString(), Colors.black),
+                        _buildRideInfoRow(Icons.attach_money, 'Price',
+                            ride.price, Colors.green),
+                      ],
+                    ),
+                    onTap: () {
+                      // Handle tap
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookingPage(
+                            ride: ride,
+                          ),
+                        ),
+                      );
+                      // Navigate to booking page
+                    },
+                  ),
+                );
+              },
+            );
+          }).toList(),
+        ],
+      );
+    }).toList();
   }
 
   Widget _buildRideInfoRow(
-    IconData icon,
-    String label,
-    String value,
-    Color iconColor,
-  ) {
-    return Row(
-      children: [
-        Icon(icon, color: iconColor),
-        const SizedBox(width: 4),
-        Text(
-          '$label: ',
-          style: const TextStyle(fontSize: 14),
-        ),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 14),
-        ),
-      ],
+      IconData icon, String label, String value, Color iconColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, color: iconColor),
+          const SizedBox(width: 8),
+          Text(
+            '$label: ',
+            style: const TextStyle(fontSize: 14),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 14),
+          ),
+        ],
+      ),
     );
   }
 }

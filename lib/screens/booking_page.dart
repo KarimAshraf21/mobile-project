@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 class BookingPage extends StatefulWidget {
   final Ride ride;
 
-  const BookingPage({Key? key, required this.ride}) : super(key: key);
+  const BookingPage({
+    Key? key,
+    required this.ride,
+  }) : super(key: key);
 
   @override
   State<BookingPage> createState() => _BookingPageState();
@@ -33,13 +36,13 @@ class _BookingPageState extends State<BookingPage> {
           ),
           const SizedBox(height: 16),
           _buildDetailRow(
-              Icons.directions_car, 'Name', widget.ride.name, Colors.blue),
+              Icons.directions_car, 'Name', "driverName", Colors.blue),
           _buildDetailRow(Icons.location_on, 'From', widget.ride.startLocation,
               Colors.blue),
           _buildDetailRow(
               Icons.location_on, 'To', widget.ride.endLocation, Colors.red),
           _buildDetailRow(
-              Icons.access_time, 'Time', widget.ride.startTime, Colors.orange),
+              Icons.access_time, 'Time', widget.ride.time, Colors.orange),
           _buildDetailRow(Icons.event_seat, 'Available seats',
               widget.ride.availableSeats.toString(), Colors.black),
           _buildDetailRow(
