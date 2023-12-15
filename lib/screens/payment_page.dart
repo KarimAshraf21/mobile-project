@@ -132,9 +132,11 @@ class _PaymentPageState extends State<PaymentPage> {
           firestore.collection('rides').doc(widget.ride.rideId);
 
       // Create a reference to the booking document
-      CollectionReference bookingsReference = firestore.collection('bookings');
+      DocumentReference bookingReference = firestore
+          .collection('bookings')
+          .doc('${widget.ride.rideId}_${await getCurrentUserId()}');
 
-      // Use a transaction to update the available seats and add a booking entry
+      // Use a transaction to update the booking status and decrement available seats
       await firestore.runTransaction((transaction) async {
         // Get the current data of the ride
         DocumentSnapshot rideSnapshot = await transaction.get(rideReference);
@@ -144,21 +146,21 @@ class _PaymentPageState extends State<PaymentPage> {
 
         // Check if there are available seats
         if (availableSeats > 0) {
-          // Decrement the available seats
-          transaction
-              .update(rideReference, {'availableSeats': availableSeats - 1});
+          // Get the current data of the booking
+          DocumentSnapshot bookingSnapshot =
+              await transaction.get(bookingReference);
 
-          // Add a booking entry to the bookings collection
-          String? userId = await getCurrentUserId();
-          if (userId != null) {
-            DocumentReference bookingReference = await bookingsReference.add({
-              'rideId': widget.ride.rideId,
-              'userId': userId,
-              'status': 'paid',
-            });
+          // Extract the current status
+          String? status = bookingSnapshot['status'];
 
-            // Log the ID of the created booking entry (optional)
-            print('Booking ID: ${bookingReference.id}');
+          // Check if the booking status is 'accepted'
+          if (status == 'accepted') {
+            // Update the status to 'paid'
+            transaction.update(bookingReference, {'status': 'paid'});
+
+            // Decrement the available seats
+            transaction
+                .update(rideReference, {'availableSeats': availableSeats - 1});
 
             // Navigate to the appropriate screen
             Navigator.pushNamedAndRemoveUntil(
@@ -167,10 +169,10 @@ class _PaymentPageState extends State<PaymentPage> {
               (route) => false,
             );
           } else {
-            // Handle the case where user ID is null
+            // Handle the case where the booking status is not 'accepted'
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('User ID is null.'),
+                content: Text('Booking status is not accepted.'),
               ),
             );
           }
@@ -188,7 +190,8 @@ class _PaymentPageState extends State<PaymentPage> {
       print('Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Failed to book the ride. Please try again.'),
+          content:
+              Text('Failed to update the booking status. Please try again.'),
         ),
       );
     }
