@@ -55,7 +55,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   }
 
                   if (rideSnapshot.hasError) {
-                    return const Text('Error fetching ride details');
+                    return const Center(child: Text('No bookings'));
                   }
 
                   final groupedRides = _groupRidesByDate(rideSnapshot.data!);
