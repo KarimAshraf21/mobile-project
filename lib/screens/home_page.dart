@@ -23,6 +23,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   User? _user;
   Map<String, dynamic>? _userData;
+
   @override
   void initState() {
     _getUserInfo();
@@ -51,7 +52,6 @@ class _HomePageState extends State<HomePage> {
 
   int _currentIndex = 0;
 
-  // List of pages corresponding to each tab
   final List<Widget> _pages = [
     const RidePage(),
     const HistoryPage(),
@@ -92,23 +92,23 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Custom app bar for BookingPage
   PreferredSizeWidget buildBookingPageAppBar() {
     return AppBar(
       backgroundColor: Colors.black,
       title: Row(
         children: [
           SizedBox(width: 50, child: Image.asset('assets/logo.png')),
-          const SizedBox(width: 8), // Add some spacing between logo and texts
+          const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Hey, $firstname!',
                 style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const Text(
                 'Where are you going?',
@@ -121,11 +121,38 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Standard app bar for other pages
   AppBar buildStandardAppBar() {
+    String title;
+    FontWeight titleWeight;
+
+    switch (_currentIndex) {
+      case 1:
+        title = 'Booking History';
+        titleWeight = FontWeight.bold;
+        break;
+      case 2:
+        title = 'Profile';
+        titleWeight = FontWeight.bold;
+        break;
+      default:
+        title = '';
+        titleWeight =
+            FontWeight.normal; // You can set a default title for other tabs
+    }
+
     return AppBar(
       backgroundColor: Colors.black,
-      title: SizedBox(width: 50, child: Image.asset('assets/logo.png')),
+      title: Row(
+        children: [
+          SizedBox(width: 50, child: Image.asset('assets/logo.png')),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+                fontSize: 16, fontWeight: titleWeight, color: Colors.white),
+          ),
+        ],
+      ),
     );
   }
 }
