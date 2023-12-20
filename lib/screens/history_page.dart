@@ -56,8 +56,6 @@ class _HistoryPageState extends State<HistoryPage> {
                     return const Text('Error fetching rides');
                   }
 
-                  print('Ride Data: $rideSnapshot');
-
                   final groupedRides = _groupRidesByDate(rideSnapshot.data!);
 
                   return FutureBuilder<List<String>>(
@@ -71,8 +69,6 @@ class _HistoryPageState extends State<HistoryPage> {
                       if (statusSnapshot.hasError) {
                         return const Text('Error fetching booking statuses');
                       }
-
-                      print('Booking Statuses: $statusSnapshot');
 
                       final bookingStatuses = statusSnapshot.data ?? [];
 
@@ -139,10 +135,28 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Future<List<String>> _getBookingStatusList(
       List<QueryDocumentSnapshot<Map<String, dynamic>>> bookingDocs) async {
-    final statusFutures = bookingDocs.map((booking) async {
-      final status = booking['status'] ?? 'Unknown Status';
-      return status.toString();
-    });
+    final statusFutures = <Future<String>>[];
+
+    for (final booking in bookingDocs) {
+      try {
+        final bookingDoc = await FirebaseFirestore.instance
+            .collection('bookings')
+            .doc(booking.id)
+            .get();
+
+        if (bookingDoc.exists) {
+          statusFutures
+              .add(Future.value(bookingDoc['status'] ?? 'Unknown Status'));
+        } else {
+          print(
+              'Error: Booking document not found for bookingId: ${booking.id}');
+          statusFutures.add(Future.value('Unknown Status'));
+        }
+      } catch (e) {
+        print('Error fetching booking status: $e');
+        statusFutures.add(Future.value('Unknown Status'));
+      }
+    }
 
     return Future.wait(statusFutures);
   }
@@ -201,7 +215,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 Colors.green),
             _buildInfoRow(
               'Status',
-              bookingStatus,
+              bookingStatus, // Use the correct status here
               Icons.info,
               Colors.green,
             ),
