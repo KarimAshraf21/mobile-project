@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -55,8 +53,10 @@ class _HistoryPageState extends State<HistoryPage> {
                   }
 
                   if (rideSnapshot.hasError) {
-                    return const Center(child: Text('No bookings'));
+                    return const Text('Error fetching rides');
                   }
+
+                  print('Ride Data: $rideSnapshot');
 
                   final groupedRides = _groupRidesByDate(rideSnapshot.data!);
 
@@ -71,6 +71,8 @@ class _HistoryPageState extends State<HistoryPage> {
                       if (statusSnapshot.hasError) {
                         return const Text('Error fetching booking statuses');
                       }
+
+                      print('Booking Statuses: $statusSnapshot');
 
                       final bookingStatuses = statusSnapshot.data ?? [];
 
@@ -113,13 +115,23 @@ class _HistoryPageState extends State<HistoryPage> {
   Future<List<Map<String, dynamic>>> _getRidesForBookings(
       List<QueryDocumentSnapshot<Map<String, dynamic>>> bookingDocs) async {
     final rideFutures = bookingDocs.map((booking) async {
-      final rideId = booking['rideId'];
-      final rideDoc = await FirebaseFirestore.instance
-          .collection('rides')
-          .doc(rideId)
-          .get();
+      try {
+        final rideId = booking['rideId'];
+        final rideDoc = await FirebaseFirestore.instance
+            .collection('rides')
+            .doc(rideId)
+            .get();
 
-      return rideDoc.data()!;
+        if (rideDoc.exists) {
+          return rideDoc.data()!;
+        } else {
+          print('Error: Ride document not found for rideId: $rideId');
+          return <String, dynamic>{};
+        }
+      } catch (e) {
+        print('Error fetching ride: $e');
+        return <String, dynamic>{};
+      }
     });
 
     return Future.wait(rideFutures);
