@@ -18,6 +18,9 @@ class _RidePageState extends State<RidePage> {
 
   @override
   Widget build(BuildContext context) {
+    DateTime today = DateTime.now();
+    DateTime todayStart = DateTime(today.year, today.month, today.day);
+
     return Scaffold(
       body: Padding(
         padding: const EdgeInsets.all(10.0),
@@ -54,8 +57,10 @@ class _RidePageState extends State<RidePage> {
             ),
             Expanded(
               child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream:
-                    FirebaseFirestore.instance.collection('rides').snapshots(),
+                stream: FirebaseFirestore.instance
+                    .collection('rides')
+                    .where('date', isGreaterThanOrEqualTo: todayStart)
+                    .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const CircularProgressIndicator();
@@ -213,6 +218,8 @@ class _RidePageState extends State<RidePage> {
                         MaterialPageRoute(
                           builder: (context) => BookingPage(
                             ride: ride,
+                            driverName: driverName,
+                            driverId: driverId,
                           ),
                         ),
                       );

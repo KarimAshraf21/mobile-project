@@ -11,10 +11,14 @@ import '/screens/ride.dart';
 
 class BookingPage extends StatefulWidget {
   final Ride ride;
+  final String driverName;
+  final String driverId;
 
   const BookingPage({
     Key? key,
     required this.ride,
+    required this.driverName,
+    required this.driverId,
   }) : super(key: key);
 
   @override
@@ -87,13 +91,6 @@ class _BookingPageState extends State<BookingPage> {
                   Text('You already have a pending booking for this ride.'),
             ),
           );
-        }
-        if (existingBooking.exists && existingBooking['status'] == 'paid') {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('You already booked this ride and paid for it'),
-            ),
-          );
         } else {
           // Only update the ride's available seats if the booking is not pending
           await firestore.runTransaction((transaction) async {
@@ -103,6 +100,35 @@ class _BookingPageState extends State<BookingPage> {
             int availableSeats = rideSnapshot['availableSeats'];
 
             if (availableSeats > 0) {
+              DateTime rideDateTime = DateTime(
+                widget.ride.date.year,
+                widget.ride.date.month,
+                widget.ride.date.day,
+                _getHour(widget.ride.time),
+                _getMinute(widget.ride.time),
+              );
+
+              DateTime deadline;
+
+              // Check the ride timing and set the booking deadline accordingly
+              if (_isMorningRide(widget.ride.time)) {
+                // For 7 am ride, set the deadline to 11 pm on the previous day
+                deadline = rideDateTime.subtract(const Duration(hours: 8));
+              } else {
+                // For 5:30 pm ride, set the deadline to 4:30 pm on the same day
+                deadline = rideDateTime.subtract(const Duration(hours: 1));
+              }
+
+              // Check if the booking deadline has passed
+              if (DateTime.now().isAfter(deadline)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Booking deadline has passed for this ride.'),
+                  ),
+                );
+                return;
+              }
+
               await bookingReference.set({
                 'rideId': widget.ride.rideId,
                 'userId': userId,
@@ -121,12 +147,13 @@ class _BookingPageState extends State<BookingPage> {
 
           // After booking, check the status and set the flag if 'accepted'
           String bookingStatus = await _getBookingStatus(
-              '${widget.ride.rideId}_${await getCurrentUserId()}');
+            '${widget.ride.rideId}_${await getCurrentUserId()}',
+          );
           if (bookingStatus == 'accepted') {
             setState(() {
               _bookingAccepted = true;
             });
-          } else {
+          } else if (bookingStatus != 'pending') {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Booking is pending approval.'),
@@ -182,6 +209,34 @@ class _BookingPageState extends State<BookingPage> {
     }
   }
 
+  bool _isMorningRide(String time) {
+    // Helper function to check if the ride is a morning ride (before 12 pm)
+    DateTime rideTime = DateTime(2023, 1, 1, _getHour(time), _getMinute(time));
+    return rideTime.isBefore(DateTime(2023, 1, 1, 12, 0));
+  }
+
+  int _getHour(String time) {
+    // Helper function to extract the hour from the time string
+    final parts = time.split(':');
+    final hour = int.parse(parts[0]);
+
+    if (time.toLowerCase().contains('pm') && hour != 12) {
+      return hour + 12;
+    } else if (time.toLowerCase().contains('am') && hour == 12) {
+      return 0;
+    } else {
+      return hour;
+    }
+  }
+
+  int _getMinute(String time) {
+    // Helper function to extract the minute from the time string
+    final parts = time.split(':');
+    final minute = int.parse(parts[1].replaceAll(RegExp('[a-z]'), ''));
+
+    return minute;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -203,7 +258,8 @@ class _BookingPageState extends State<BookingPage> {
           ),
           const SizedBox(height: 16),
           _buildDetailRow(
-              Icons.directions_car, 'Name', "driverName", Colors.blue),
+              Icons.directions_car, 'Name', widget.driverName, Colors.blue),
+          _buildDetailRow(Icons.person, 'Name', widget.driverId, Colors.blue),
           _buildDetailRow(Icons.location_on, 'From', widget.ride.startLocation,
               Colors.blue),
           _buildDetailRow(
