@@ -1,11 +1,10 @@
-// ignore_for_file: use_build_context_synchronously, avoid_print
+// ignore_for_file: use_build_context_synchronously
 
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-
 import '/screens/payment_page.dart';
 import '/screens/ride.dart';
 
@@ -121,10 +120,32 @@ class _BookingPageState extends State<BookingPage> {
 
               // Check if the booking deadline has passed
               if (DateTime.now().isAfter(deadline)) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Booking deadline has passed for this ride.'),
-                  ),
+                // Show a dialog instead of a toast
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('Booking Deadline Passed'),
+                      content: const Text(
+                          'The booking deadline has passed for this ride. Do you still want to proceed?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Close the dialog
+                          },
+                          child: const Text('OK'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Close the dialog
+                            // Proceed with booking
+                            _proceedWithBooking();
+                          },
+                          child: const Text('Bypass'),
+                        ),
+                      ],
+                    );
+                  },
                 );
                 return;
               }
@@ -160,6 +181,75 @@ class _BookingPageState extends State<BookingPage> {
               ),
             );
           }
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('User ID is null.'),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to book the ride. Please try again.'),
+        ),
+      );
+    }
+  }
+
+  void _proceedWithBooking() async {
+    try {
+      FirebaseFirestore firestore = FirebaseFirestore.instance;
+      DocumentReference rideReference =
+          firestore.collection('rides').doc(widget.ride.rideId);
+
+      CollectionReference bookingsReference = firestore.collection('bookings');
+
+      String? userId = await getCurrentUserId();
+      if (userId != null) {
+        DocumentReference bookingReference = bookingsReference.doc(
+          '${widget.ride.rideId}_$userId',
+        );
+
+        // Only update the ride's available seats if the booking is not pending
+        await firestore.runTransaction((transaction) async {
+          DocumentSnapshot rideSnapshot = await transaction.get(rideReference);
+
+          int availableSeats = rideSnapshot['availableSeats'];
+
+          if (availableSeats > 0) {
+            await bookingReference.set({
+              'rideId': widget.ride.rideId,
+              'userId': userId,
+              'status': 'pending',
+            });
+
+            print('Booking ID: ${bookingReference.id}');
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('No available seats for this ride.'),
+              ),
+            );
+          }
+        });
+
+        // After booking, check the status and set the flag if 'accepted'
+        String bookingStatus = await _getBookingStatus(
+          '${widget.ride.rideId}_${await getCurrentUserId()}',
+        );
+        if (bookingStatus == 'accepted') {
+          setState(() {
+            _bookingAccepted = true;
+          });
+        } else if (bookingStatus != 'pending') {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Booking is pending approval.'),
+            ),
+          );
         }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
